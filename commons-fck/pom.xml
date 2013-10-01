@@ -6,7 +6,7 @@
     <groupId>org.exoplatform.commons</groupId>
     <version>4.2.x-commons-pdf-js-SNAPSHOT</version>
   </parent>
-  <artifactId>commons-comet-webapp</artifactId>
+  <artifactId>commons-fck</artifactId>
   <packaging>war</packaging>
-  <name>eXo Commons - Comet WebApp</name>
+  <name>eXo Commons - Web FCK</name>
 </project>
