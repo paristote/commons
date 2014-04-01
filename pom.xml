@@ -49,6 +49,7 @@
     <!-- **************************************** -->
     <!-- Dependencies versions                    -->
     <!-- **************************************** -->
+
     <org.exoplatform.depmgt.version>9-upgrade-gatein-3.7.x-SNAPSHOT</org.exoplatform.depmgt.version>
     <!-- JCR Project Dependencies -->
       <org.exoplatform.kernel.version>2.5.0-Alpha4</org.exoplatform.kernel.version>
@@ -57,6 +58,7 @@
       <org.exoplatform.jcr.version>1.16.0-Alpha4</org.exoplatform.jcr.version>
     <!-- GateIn Project Dependencies -->
     <org.gatein.portal.version>3.7.0.Beta01</org.gatein.portal.version>
+
     <!-- Platform Project Dependencies -->
     <org.exoplatform.platform-ui.version>4.1.x-plfui-upgrade-gatein-3.7.x-SNAPSHOT</org.exoplatform.platform-ui.version>
   </properties>
