@@ -76,7 +76,7 @@ public class NotificationServiceImpl extends AbstractService implements Notifica
     for (String userId : userIds) {
       UserSetting userSetting = notificationService.get(userId);
       //
-      if (userSetting.isActive() == false) {
+      if (!userSetting.isActive()) {
         continue;
       }
       // send instantly mail
@@ -196,6 +196,9 @@ public class NotificationServiceImpl extends AbstractService implements Notifica
     final boolean stats = NotificationContextFactory.getInstance().getStatistics().isStatisticsEnabled();
     
     for (UserSetting userSetting : userSettings) {
+      if (!userSetting.isActive()) {
+        continue;
+      }
       if (defaultSetting != null) {
         userSetting = defaultSetting.clone()
                                     .setUserId(userSetting.getUserId())
