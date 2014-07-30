@@ -3,6 +3,8 @@ package org.exoplatform.settings.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.pdfbox.util.operator.SetMoveAndShow;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.organization.UserEventListener;
 import org.exoplatform.services.organization.UserStatus;
@@ -19,6 +21,10 @@ public class MockOrganizationService extends DummyOrganizationService {
     this.userDAO_ = new MockUserHandlerImpl();
   }
   
+  public void setMockUserHandlerImpl(UserHandlerImpl  handlerImpl) {
+    this.userDAO_ = handlerImpl;
+  }
+  
   
   public static class MockUserHandlerImpl extends UserHandlerImpl {
     @Override
@@ -33,6 +39,13 @@ public class MockOrganizationService extends DummyOrganizationService {
       }
       //
       return user;
+    }
+
+    @Override
+    public User removeUser(String userName, boolean broadcast) throws Exception {
+      CommonsUtils.getService(MockOrganizationService.class)
+                  .setMockUserHandlerImpl(new MockUserHandlerImpl());
+      return null;
     }
   }
   

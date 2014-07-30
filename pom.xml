@@ -4,7 +4,7 @@
   <parent>
     <artifactId>maven-parent-pom</artifactId>
     <groupId>org.exoplatform</groupId>
-    <version>12</version>
+    <version>13</version>
     <relativePath />
   </parent>
   <groupId>org.exoplatform.commons</groupId>
@@ -76,7 +76,14 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- Our own project modules -->
+      <!-- Declare our own artifacts -->
+      <dependency>
+        <groupId>org.exoplatform.commons</groupId>
+        <artifactId>commons</artifactId>
+        <version>${project.version}</version>
+        <classifier>source-release</classifier>
+        <type>zip</type>
+      </dependency>
       <dependency>
         <groupId>org.exoplatform.commons</groupId>
         <artifactId>commons-api</artifactId>
