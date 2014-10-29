@@ -171,15 +171,28 @@ public class UIFormRichtextInput extends UIFormInputBase<String> {
     
     builder.append("    CKEDITOR.replace('").append(name).append("', {toolbar:'").append(toolbar).append("', height:")
            .append(height).append(", contentsCss:").append(css).append(", enterMode:").append(enterMode)
-           .append((isPasteAsPlainText) ? ", forcePasteAsPlainText: true" : "")
-           .append(", shiftEnterMode:").append(enterMode).append("});\n");
+           .append((isPasteAsPlainText) ? ", forcePasteAsPlainText: true" : "").append("});\n");
 
     builder.append("    instance = CKEDITOR.instances['" + name + "'];")
            .append("    instance.on( 'change', function(e) { document.getElementById('").append(name).append("').value = instance.getData(); });\n")
+           //workaround, fix IE case: can not focus to editor
            .append("  //]]>\n")
-           .append("});");
+           .append("});")
+           .append("if(eXo.core.Browser.ie==9 || eXo.core.Browser.ie==10){")
+           .append(" var textare = document.getElementById('").append(name).append("'); ")
+           .append(" var form = textare;")
+           .append(" while (form && (form.nodeName.toLowerCase() != 'form')) { form = form.parentNode;}")
+           .append(" form.onmouseover=function(){")
+           .append("  this.onmouseover='';")
+           .append("  var textare = document.getElementById('").append(name).append("'); ")
+           .append("  textare.style.display='block';")
+           .append("  textare.style.visibility='visible';")
+           .append("  textare.focus();")           
+           .append("  textare.style.display='none';")
+           .append(" }")
+           .append("}")           
 
-    builder.append("</script>\n");
+           .append("</script>\n");
 
     builder.append("  </span>");
 

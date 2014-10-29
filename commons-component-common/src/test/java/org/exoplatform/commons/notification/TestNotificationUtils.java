@@ -17,11 +17,35 @@
 package org.exoplatform.commons.notification;
 
 
+import java.util.Locale;
+
 import junit.framework.TestCase;
 
 public class TestNotificationUtils extends TestCase {
 
   public TestNotificationUtils() {
+  }
+  
+  public void testGetLocale() {
+    String language = null;
+    Locale actual = NotificationUtils.getLocale(language);
+    assertEquals(Locale.ENGLISH, actual);
+    
+    language = "";
+    actual = NotificationUtils.getLocale(language);
+    assertEquals(Locale.ENGLISH, actual);
+    
+    language = "fr";
+    actual = NotificationUtils.getLocale(language);
+    assertEquals(Locale.FRENCH, actual);
+    
+    language = "pt_BR";
+    actual = NotificationUtils.getLocale(language);
+    assertEquals(new Locale("pt", "BR"), actual);
+    
+    language = "pt_BR_BR";
+    actual = NotificationUtils.getLocale(language);
+    assertEquals(new Locale("pt", "BR", "BR"), actual);
   }
   
   public void testIsValidEmailAddresses() {
@@ -40,12 +64,18 @@ public class TestNotificationUtils extends TestCase {
     // email have before '.' is number
     emails = "test@test.787";
     assertEquals(false, NotificationUtils.isValidEmailAddresses(emails));
+    
+    emails = "no reply aaa@xyz.com, demo+aaa@demo.com, ";
+    assertEquals(false, NotificationUtils.isValidEmailAddresses(emails));
+    
     // basic case
     emails = "test@test.com";
     assertEquals(true, NotificationUtils.isValidEmailAddresses(emails));
     emails = "test@test.com.vn";
     assertEquals(true, NotificationUtils.isValidEmailAddresses(emails));
     emails = "test@test.com, demo@demo.com, ";
+    assertEquals(true, NotificationUtils.isValidEmailAddresses(emails));
+    emails = "test@test.com ,  demo@demo.com, ";
     assertEquals(true, NotificationUtils.isValidEmailAddresses(emails));
     emails = "test+test@test.com, demo+aaa@demo.com, ";
     assertEquals(true, NotificationUtils.isValidEmailAddresses(emails));
