@@ -74,13 +74,14 @@ public class EXoContinuationCometdServlet extends CometDServlet {
     /**
      * {@inheritDoc}
      */
-    protected EXoContinuationBayeux newBayeux() {
+    protected EXoContinuationBayeux newBayeuxServer() {
         try {
             if (LOG.isDebugEnabled())
                 LOG.debug("EXoContinuationCometdServlet - Current Container-ExoContainer: "
                         + container);
             EXoContinuationBayeux bayeux = (EXoContinuationBayeux) container.getComponentInstanceOfType(BayeuxServer.class);
             bayeux.setTimeout(Long.parseLong(getInitParameter("timeout")));
+            // bayeux.initialize(getServletContext());
             if (LOG.isDebugEnabled())
                 LOG.debug("EXoContinuationCometdServlet - -->AbstractBayeux=" + bayeux);
             return bayeux;

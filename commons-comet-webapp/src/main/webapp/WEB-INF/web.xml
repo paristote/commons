@@ -9,6 +9,7 @@
   <filter>
     <filter-name>ResourceRequestFilter</filter-name>
     <filter-class>org.exoplatform.portal.application.ResourceRequestFilter</filter-class>
+    <async-supported>true</async-supported>
   </filter>
 
   <filter-mapping>
@@ -43,7 +44,7 @@
     </init-param>
     <init-param>
         <param-name>transports</param-name>
-        <param-value>org.cometd.server.transport.JSONPTransport</param-value>
+        <param-value>org.cometd.server.transport.JSONPTransport,org.cometd.server.transport.JSONTransport</param-value>
     </init-param>
     <init-param>
       <param-name>JSONCommented</param-name>

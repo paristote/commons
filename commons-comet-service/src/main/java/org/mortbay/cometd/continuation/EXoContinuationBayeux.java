@@ -16,12 +16,9 @@ package org.mortbay.cometd.continuation;
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, see<http://www.gnu.org/licenses/>.
  */
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import javax.servlet.ServletContext;
 
@@ -55,7 +52,7 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
     /**
      * Generate userToken.
      */
-    transient Random                   random;
+    // transient Random random;
 
     /**
      * Timeout.
@@ -71,7 +68,7 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
      * Used to send message to all client or a specific client that listen a
      * specific channel
      */
-    private ServerSessionImpl          systemClient;
+    private EXoContinuationClient      systemClient;
 
     /**
      * Logger.
@@ -115,11 +112,15 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
         return cometdContextName;
     }
 
+    public void setCometdContextName(String context) {
+        this.cometdContextName = context;
+    }
+
     /**
      * {@inheritDoc}
      */
     long getRandom(long variation) {
-        long l = random.nextLong() ^ variation;
+        long l = randomLong() ^ variation;
         return l < 0 ? -l : l;
     }
 
@@ -139,29 +140,31 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
     }
 
     /* ------------------------------------------------------------ */
-    /**
-     * {@inheritDoc}
-     */
-    protected void initialize(ServletContext context) {
+    public void initialize(ServletContext context) {
         // http://docs.cometd.org/3/apidocs/org/cometd/server/BayeuxServerImpl.html#createChannelIfAbsent-java.lang.String-org.cometd.bayeux.server.ConfigurableServerChannel.Initializer...-
         // It seems to be the new way to initialize a channel
 
         MarkedReference<ServerChannel> ref = createChannelIfAbsent(Channel.SERVICE,
-                                                                   (ConfigurableServerChannel.Initializer) null);
-        if (ref.isMarked())
-            return; // avoid initializing twice
+                                                                   new ServerChannel.Initializer() {
+                                                                       public void configureChannel(ConfigurableServerChannel channel) {
+                                                                           channel.setPersistent(true);
+                                                                       }
+                                                                   });
+        // if (ref.isMarked())
+        // return; // avoid initializing twice
+        setCometdContextName(context.getServletContextName());
 
-        cometdContextName = context.getServletContextName();
-        try {
-            random = SecureRandom.getInstance("SHA1PRNG");
-        } catch (NoSuchAlgorithmException e) {
-            context.log("Could not get secure random for ID generation", e);
-            random = new Random();
-        }
-        random.setSeed(random.nextLong() ^ hashCode() ^ (context.hashCode() << 32)
-                ^ Runtime.getRuntime().freeMemory());
-        if (LOG.isDebugEnabled())
-            LOG.debug("Initialized");
+        // try {
+        // random = SecureRandom.getInstance("SHA1PRNG");
+        // } catch (NoSuchAlgorithmException e) {
+        // context.log("Could not get secure random for ID generation", e);
+        // random = new Random();
+        // }
+        // random.setSeed(random.nextLong() ^ hashCode() ^ (context.hashCode()
+        // << 32)
+        // ^ Runtime.getRuntime().freeMemory());
+        // if (LOG.isDebugEnabled())
+        // LOG.debug("Initialized");
     }
 
     /**
@@ -218,7 +221,7 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
      */
     public void sendMessage(String eXoId, String channel, Object data, String id) {
         EXoContinuationClient toClient = getClientByEXoId(eXoId);
-        ServerSessionImpl fromClient = getSystemClient();
+        EXoContinuationClient fromClient = getSystemClient();
         if (toClient != null) {
             toClient.deliver(fromClient, channel, data);
             if (LOG.isDebugEnabled())
@@ -231,9 +234,9 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
         }
     }
 
-    private ServerSessionImpl getSystemClient() {
+    private EXoContinuationClient getSystemClient() {
         if (systemClient == null) {
-            systemClient = (ServerSessionImpl) newServerSession();
+            systemClient = (EXoContinuationClient) newServerSession();
         }
         return systemClient;
     }
@@ -308,7 +311,8 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
                 return false;
             }
             // We set the eXoID
-            if (((EXoContinuationClient) client).getEXoId() == null) {
+            if (client instanceof EXoContinuationClient
+                    && ((EXoContinuationClient) client).getEXoId() == null) {
                 ((EXoContinuationClient) client).setEXoId((String) message.get("exoId"));
             }
             return client != null && !channel.getId().startsWith("/meta/");
