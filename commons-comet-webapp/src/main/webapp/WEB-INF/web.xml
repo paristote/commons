@@ -19,6 +19,8 @@
   <servlet>
     <servlet-name>cometd</servlet-name>
     <servlet-class>org.mortbay.cometd.continuation.EXoContinuationCometdServlet</servlet-class>
+    <load-on-startup>1</load-on-startup> 
+    <async-supported>true</async-supported>
     <init-param>
       <param-name>filters</param-name>
       <param-value>/WEB-INF/filters.json</param-value>
@@ -32,12 +34,16 @@
       <param-value>0</param-value>
     </init-param>
     <init-param>
-      <param-name>multiFrameInterval</param-name>
+      <param-name>long-polling.multiSessionInterval</param-name>
       <param-value>1500</param-value>
     </init-param>
     <init-param>
-      <param-name>logLevel</param-name>
-      <param-value>0</param-value>
+        <param-name>ws.cometdURLMapping</param-name>
+        <param-value>/cometd/*</param-value>
+    </init-param>
+    <init-param>
+        <param-name>transports</param-name>
+        <param-value>org.cometd.server.transport.JSONPTransport</param-value>
     </init-param>
     <init-param>
       <param-name>JSONCommented</param-name>

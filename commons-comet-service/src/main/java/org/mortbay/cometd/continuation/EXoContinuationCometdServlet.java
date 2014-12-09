@@ -21,12 +21,13 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 
+import org.cometd.bayeux.server.BayeuxServer;
+import org.cometd.server.CometDServlet;
 import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.RootContainer.PortalContainerPostInitTask;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.mortbay.cometd.AbstractBayeux;
 
 /**
  * Created by The eXo Platform SAS.
@@ -35,68 +36,57 @@ import org.mortbay.cometd.AbstractBayeux;
  * @version $Id: $
  */
 
-public class EXoContinuationCometdServlet
-   extends ContinuationCometdServlet
-{
+public class EXoContinuationCometdServlet extends CometDServlet {
 
-   /**
+    /**
     * 
     */
-   private static final long serialVersionUID = 9204910608302112814L;
-   /**
-    * Logger.
-    */
-   private static final Log LOG = ExoLogger.getLogger(EXoContinuationCometdServlet.class);
+    private static final long serialVersionUID = 9204910608302112814L;
 
-   /**
-    * The portal container
-    */
-   private ExoContainer container;
-   
-   /**
-    * {@inheritDoc}
-    */
-   public void init(final ServletConfig config) throws ServletException
-   {
-      final PortalContainerPostInitTask task = new PortalContainerPostInitTask()
-      {
+    /**
+     * Logger.
+     */
+    private static final Log  LOG              = ExoLogger.getLogger(CometDServlet.class);
 
-         public void execute(ServletContext context, PortalContainer portalContainer)
-         {
-            EXoContinuationCometdServlet.this.container = portalContainer;
-            try
-            {
-               EXoContinuationCometdServlet.super.init(config);
+    /**
+     * The portal container
+     */
+    private ExoContainer      container;
+
+    /**
+     * {@inheritDoc}
+     */
+    public void init(final ServletConfig config) throws ServletException {
+        final PortalContainerPostInitTask task = new PortalContainerPostInitTask() {
+
+            public void execute(ServletContext context, PortalContainer portalContainer) {
+                EXoContinuationCometdServlet.this.container = portalContainer;
+                try {
+                    EXoContinuationCometdServlet.super.init(config);
+                } catch (ServletException e) {
+                    LOG.error("Cannot initialize Bayeux", e);
+                }
             }
-            catch (ServletException e)
-            {
-               LOG.error("Cannot initialize Bayeux", e);
-            }
-         }
-      };
-      PortalContainer.addInitTask(config.getServletContext(), task);
-   }
-   
-   /**
-    * {@inheritDoc}
-    */
-   protected EXoContinuationBayeux newBayeux()
-   {
-      try
-      {
-         if (LOG.isDebugEnabled())
-            LOG.debug("EXoContinuationCometdServlet - Current Container-ExoContainer: " + container);
-         EXoContinuationBayeux bayeux =
-                  (EXoContinuationBayeux) container.getComponentInstanceOfType(AbstractBayeux.class);
-         bayeux.setTimeout(Long.parseLong(getInitParameter("timeout")));
-         if (LOG.isDebugEnabled())
-            LOG.debug("EXoContinuationCometdServlet - -->AbstractBayeux=" + bayeux);
-         return bayeux;
-      }
-      catch (NumberFormatException e)
-      {
-         LOG.error("Error new Bayeux creation ", e);
-         return null;
-      }
-   }
+        };
+        PortalContainer.addInitTask(config.getServletContext(), task);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected EXoContinuationBayeux newBayeux() {
+        try {
+            if (LOG.isDebugEnabled())
+                LOG.debug("EXoContinuationCometdServlet - Current Container-ExoContainer: "
+                        + container);
+            EXoContinuationBayeux bayeux = (EXoContinuationBayeux) container.getComponentInstanceOfType(BayeuxServer.class);
+            bayeux.setTimeout(Long.parseLong(getInitParameter("timeout")));
+            if (LOG.isDebugEnabled())
+                LOG.debug("EXoContinuationCometdServlet - -->AbstractBayeux=" + bayeux);
+            return bayeux;
+        } catch (NumberFormatException e) {
+            LOG.error("Error new Bayeux creation ", e);
+            return null;
+        }
+    }
 }
