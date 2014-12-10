@@ -19,6 +19,7 @@ package org.mortbay.cometd.continuation;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.ServletContext;
 
@@ -50,6 +51,11 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
     private static Map<String, String> userToken         = new HashMap<String, String>();
 
     /**
+     * Stores the eXoID <=> clientID association
+     */
+    private static Map<String, String> clientIDs         = new HashMap<String, String>();
+
+    /**
      * Generate userToken.
      */
     // transient Random random;
@@ -68,7 +74,7 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
      * Used to send message to all client or a specific client that listen a
      * specific channel
      */
-    private EXoContinuationClient      systemClient;
+    private ServerSessionImpl          systemClient;
 
     /**
      * Logger.
@@ -86,8 +92,9 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
     /**
      * {@inheritDoc}
      */
-    public ServerSessionImpl newRemoteClient() {
-        EXoContinuationClient client = new EXoContinuationClient(this);
+    public ServerSession newRemoteClient() {
+        ServerSessionImpl client = newServerSession();
+        // EXoContinuationClient client = new EXoContinuationClient(this);
         return client;
     }
 
@@ -171,6 +178,7 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
      * @param eXoID the id of client.
      * @return client with eXoID
      */
+    @Deprecated
     public EXoContinuationClient getClientByEXoId(String eXoID) {
         List<ServerSession> ids = getSessions();
         for (ServerSession client : ids) {
@@ -181,6 +189,19 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
             }
         }
         return null;
+    }
+
+    public String getExoIdOfClient(String clientId) {
+        Set<String> keys = clientIDs.keySet();
+        for (String id : keys) {
+            if (clientIDs.get(id).equals(clientId) && getSession(clientId) != null)
+                return id;
+        }
+        return null;
+    }
+
+    public boolean isSubscribed(String eXoID, String clientID) {
+        return (clientIDs.get(eXoID) != null && clientIDs.get(eXoID).equals(clientID));
     }
 
     /**
@@ -214,29 +235,31 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
      * response is to be sent to the subscribed channel, then the data can
      * simply be returned from the subscription method.
      * 
-     * @param eXoId the id of target client
+     * @param eXoID the id of target client
      * @param channel The id of channel the message is for
      * @param data The data of the message
      * @param id The id of the message (or null for a random id).
      */
-    public void sendMessage(String eXoId, String channel, Object data, String id) {
-        EXoContinuationClient toClient = getClientByEXoId(eXoId);
-        EXoContinuationClient fromClient = getSystemClient();
+    public void sendMessage(String eXoID, String channel, Object data, String id) {
+        // EXoContinuationClient toClient = getClientByEXoId(eXoId);
+        String clientId = clientIDs.get(eXoID);
+        ServerSession toClient = getSession(clientId);
+        ServerSessionImpl fromClient = getSystemClient();
         if (toClient != null) {
             toClient.deliver(fromClient, channel, data);
             if (LOG.isDebugEnabled())
                 LOG.debug("Send message " + data.toString() + " on channel " + channel
-                        + " to client " + eXoId);
+                        + " to client " + eXoID);
         } else {
             if (LOG.isDebugEnabled())
                 LOG.debug("Message " + data.toString() + " not send on channel " + channel
-                        + " client " + eXoId + " not exist!");
+                        + " client " + eXoID + " not exist!");
         }
     }
 
-    private EXoContinuationClient getSystemClient() {
+    private ServerSessionImpl getSystemClient() {
         if (systemClient == null) {
-            systemClient = (EXoContinuationClient) newServerSession();
+            systemClient = newServerSession();
         }
         return systemClient;
     }
@@ -311,10 +334,14 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
                 return false;
             }
             // We set the eXoID
-            if (client instanceof EXoContinuationClient
-                    && ((EXoContinuationClient) client).getEXoId() == null) {
-                ((EXoContinuationClient) client).setEXoId((String) message.get("exoId"));
-            }
+            String eXoID = (String) message.get("exoId");
+            if (eXoID != null)
+                clientIDs.put(eXoID, client.getId());
+            // if (client instanceof EXoContinuationClient
+            // && ((EXoContinuationClient) client).getEXoId() == null) {
+            // ((EXoContinuationClient) client).setEXoId((String)
+            // message.get("exoId"));
+            // }
             return client != null && !channel.getId().startsWith("/meta/");
         }
 

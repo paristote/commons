@@ -26,6 +26,7 @@ import org.cometd.server.ServerSessionImpl;
  * @version $Id: $
  */
 
+@Deprecated
 public class EXoContinuationClient extends ServerSessionImpl {
 
     /**
