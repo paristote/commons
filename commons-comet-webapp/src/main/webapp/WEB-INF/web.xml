@@ -19,9 +19,7 @@
 
   <servlet>
     <servlet-name>cometd</servlet-name>
-    <servlet-class>org.mortbay.cometd.continuation.EXoContinuationCometdServlet</servlet-class>
-    <load-on-startup>1</load-on-startup> 
-    <async-supported>true</async-supported>
+    <servlet-class>org.mortbay.cometd.continuation.EXoContinuationCometdServlet</servlet-class>    
     <init-param>
       <param-name>filters</param-name>
       <param-value>/WEB-INF/filters.json</param-value>
@@ -59,6 +57,7 @@
       <param-value>portal</param-value>
     </init-param>
     <load-on-startup>1</load-on-startup>
+    <async-supported>true</async-supported>
   </servlet>
 
   <servlet-mapping>
