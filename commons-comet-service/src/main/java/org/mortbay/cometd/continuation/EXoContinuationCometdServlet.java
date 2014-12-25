@@ -21,8 +21,15 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.cometd.bayeux.server.BayeuxServer;
 import org.cometd.server.CometDServlet;
+import org.exoplatform.commons.utils.PropertyManager;
 import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.RootContainer.PortalContainerPostInitTask;
@@ -52,7 +59,14 @@ public class EXoContinuationCometdServlet extends CometDServlet {
      * The portal container
      */
     private ExoContainer      container;
-
+    
+    public static final String PREFIX = "eXo.cometd.";
+    
+    public static String[] configs = {"transports", "allowedTransports", "jsonContext", "validateMessageFields", "broadcastToPublisher",
+                                      "timeout", "interval", "maxInterval", "maxLazyTimeout", "metaConnectDeliverOnly", "maxQueue", "maxSessionsPerBrowser",
+                                      "allowMultiSessionsNoBrowser", "multiSessionInterval", "browserCookieName", "browserCookieDomain", "browserCookiePath",
+                                      "ws.cometdURLMapping", "ws.messagesPerFrame", "ws.bufferSize", "ws.maxMessageSize", "ws.idleTimeout"};
+    
     /**
      * {@inheritDoc}
      */
@@ -61,7 +75,7 @@ public class EXoContinuationCometdServlet extends CometDServlet {
 
             public void execute(ServletContext context, PortalContainer portalContainer) {
                 EXoContinuationCometdServlet.this.container = portalContainer;
-                try {
+                try {                    
                     EXoContinuationCometdServlet.super.init(config);
                 } catch (ServletException e) {
                     LOG.error("Cannot initialize Bayeux", e);
@@ -89,5 +103,24 @@ public class EXoContinuationCometdServlet extends CometDServlet {
             LOG.error("Error new Bayeux creation ", e);
             return null;
         }
+    }
+
+    @Override
+    public String getInitParameter(String name) {
+        String value = PropertyManager.getProperty(PREFIX + name);
+        if (value == null) {
+            value = super.getInitParameter(name);
+        }
+        return value;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Enumeration getInitParameterNames() {
+        Set<String> names = new HashSet<String>();
+        names.addAll(Collections.list(super.getInitParameterNames()));        
+        names.addAll(Arrays.asList(configs));
+        
+        return Collections.enumeration(names);
     }
 }

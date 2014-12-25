@@ -321,6 +321,12 @@
           <artifactId>cometd-java-server</artifactId>
           <version>3.0.3</version>
       </dependency>
+      <dependency>
+	  <groupId>org.cometd.javascript</groupId>
+          <artifactId>cometd-javascript-jquery</artifactId>
+          <version>3.0.3</version>
+	  <type>war</type>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <build>
