@@ -29,6 +29,10 @@
       <param-value>120000</param-value>
     </init-param>
     <init-param>
+      <param-name>maxSessionsPerBrowser</param-name>
+      <param-value>-1</param-value>
+    </init-param>
+    <init-param>
       <param-name>interval</param-name>
       <param-value>0</param-value>
     </init-param>
