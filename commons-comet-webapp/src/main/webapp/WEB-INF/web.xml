@@ -46,7 +46,7 @@
     </init-param>
     <init-param>
         <param-name>transports</param-name>
-        <param-value>org.cometd.server.transport.JSONPTransport,org.cometd.server.transport.AsyncJSONTransport,org.cometd.websocket.server.WebSocketTransport</param-value>
+        <param-value>org.cometd.server.transport.JSONPTransport,org.cometd.server.transport.JSONTransport,org.cometd.websocket.server.WebSocketTransport</param-value>
     </init-param>
     <init-param>
       <param-name>JSONCommented</param-name>
@@ -56,40 +56,28 @@
       <param-name>alwaysResumePoll</param-name>
       <param-value>false</param-value> <!-- use true for x-site cometd -->
     </init-param>
+
     <init-param>
-      <param-name>containerName</param-name>
-      <param-value>portal</param-value>
+        <param-name>oort.url</param-name>
+        <param-value></param-value>
     </init-param>
+        <init-param>
+        <param-name>oort.secret</param-name>
+        <param-value>exo</param-value>
+    </init-param>    
+    <init-param>
+        <param-name>oort.cloud</param-name>
+        <param-value></param-value>
+    </init-param>    
+    <init-param>
+        <param-name>oort.channels</param-name>
+        <param-value>/*</param-value>
+    </init-param>
+
     <load-on-startup>1</load-on-startup>
     <async-supported>true</async-supported>
-  </servlet>
-  
-<!--  
-  <servlet>
-      <servlet-name>oort</servlet-name>
-      <servlet-class>org.cometd.oort.OortStaticConfigServlet</servlet-class>
-      <init-param>
-          <param-name>oort.url</param-name>
-          <param-value>http://localhost:8080/cometd/cometd</param-value>
-      </init-param>
-      <init-param>
-          <param-name>oort.cloud</param-name>
-          <param-value>http://host2:port/context/cometd</param-value>
-      </init-param>
-      
-      <init-param>
-          <param-name>oort.channels</param-name>
-          <param-value>/**</param-value>
-      </init-param>
-      <load-on-startup>2</load-on-startup>
-  </servlet>
-  
-  <servlet>
-      <servlet-name>seti</servlet-name>
-      <servlet-class>org.cometd.oort.SetiServlet</servlet-class>
-      <load-on-startup>3</load-on-startup>
-  </servlet>
--->
+  </servlet>  
+
   <servlet-mapping>
     <servlet-name>cometd</servlet-name>
     <url-pattern>/cometd/*</url-pattern>

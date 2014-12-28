@@ -34,6 +34,8 @@ import org.cometd.bayeux.server.SecurityPolicy;
 import org.cometd.bayeux.server.ServerChannel;
 import org.cometd.bayeux.server.ServerMessage;
 import org.cometd.bayeux.server.ServerSession;
+import org.cometd.oort.Oort;
+import org.cometd.oort.Seti;
 import org.cometd.server.BayeuxServerImpl;
 import org.cometd.server.ServerSessionImpl;
 import org.eclipse.jetty.util.ConcurrentHashSet;
@@ -73,6 +75,10 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
      * specific channel
      */
     private ServerSessionImpl          systemClient;
+    
+    private Seti seti;
+    
+    private Oort oort;
 
     /**
      * Logger.
@@ -84,7 +90,7 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
      */
     public EXoContinuationBayeux() {
         super();
-        this.setSecurityPolicy(new EXoSecurityPolicy());
+        this.setSecurityPolicy(new EXoSecurityPolicy(this));
     }
 
     /**
@@ -217,21 +223,15 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
      * @param id The id of the message (or null for a random id).
      */
     public void sendMessage(String eXoID, String channel, Object data, String id) {
-        Set<String> clientIds = clientIDs.get(eXoID);
-        for (String clientId : clientIds) {
-            ServerSession toClient = getSession(clientId);
-            ServerSessionImpl fromClient = getSystemClient();
-            if (toClient != null) {
-                toClient.deliver(fromClient, channel, data);
-                if (LOG.isDebugEnabled())
-                    LOG.debug("Send message " + data.toString() + " on channel " + channel
-                            + " to client " + eXoID);
-            } else {
-                if (LOG.isDebugEnabled())
-                    LOG.debug("Message " + data.toString() + " not send on channel " + channel
-                            + " client " + eXoID + " not exist!");
-            }            
-        }
+        seti.sendMessage(eXoID, channel, data);        
+    }
+    
+    public void setSeti(Seti seti) {
+        this.seti = seti;
+    }
+    
+    public void setOort(Oort oort) {
+        this.oort = oort;
     }
 
     private ServerSessionImpl getSystemClient() {
@@ -239,14 +239,16 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
             systemClient = newServerSession();
         }
         return systemClient;
-    }
+    }    
 
     public static class EXoSecurityPolicy implements SecurityPolicy, ServerSession.RemoveListener {
 
-        public EXoSecurityPolicy() {
-            super();
+        private EXoContinuationBayeux bayeux;
+        
+        public EXoSecurityPolicy(EXoContinuationBayeux bayeux) {
+            this.bayeux = bayeux;
         }
-
+        
         /**
          * @param message the cometd message.
          * @return true if user valid else false.
@@ -276,7 +278,24 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
          */
         @Override
         public boolean canHandshake(BayeuxServer server, ServerSession client, ServerMessage message) {
-            return checkUser(message);
+            if (client.isLocalSession() || bayeux.oort.isOortHandshake(message)) {
+                return true;
+            }else if (checkUser(message)) {
+                client.addListener(this);
+                
+                String eXoID = (String) message.get("exoId");
+                Set<String> cIds = clientIDs.get(eXoID);
+                if (cIds == null) {
+                    cIds = new ConcurrentHashSet<String>();
+                    clientIDs.put(eXoID, cIds);
+                }
+                bayeux.seti.associate(eXoID, client);
+                
+                cIds.add(client.getId());
+                return true;                
+            } else {
+                return false;
+            }
         }
 
         /**
@@ -287,8 +306,7 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
                                   ServerSession client,
                                   ServerChannel channel,
                                   ServerMessage message) {
-            Boolean b = client != null && !channel.getId().startsWith("/meta/");
-            return b;
+            return client != null;
         }
 
         /**
@@ -299,21 +317,7 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
                                     ServerSession client,
                                     ServerChannel channel,
                                     ServerMessage message) {
-            if (client != null && !channel.getId().startsWith("/meta/") && checkUser(message)) {
-                client.addListener(this);
-                // We set the eXoID
-                String eXoID = (String) message.get("exoId");
-                Set<String> cIds = clientIDs.get(eXoID);
-                if (cIds == null) {
-                    cIds = new ConcurrentHashSet<String>();
-                    clientIDs.put(eXoID, cIds);
-                }
-                
-                cIds.add(client.getId());
-                return true;
-            } else {
-                return false ;               
-            }
+            return client != null && (checkUser(message) || client.isLocalSession() || bayeux.oort.isOort(client));
         }
 
         @Override
@@ -328,6 +332,6 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
                     iter.remove();
                 }               
             }
-        }
+        }        
     }
 }

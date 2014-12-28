@@ -28,7 +28,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.cometd.bayeux.server.BayeuxServer;
+import org.cometd.client.transport.LongPollingTransport;
+import org.cometd.oort.Oort;
+import org.cometd.oort.OortConfigServlet;
+import org.cometd.oort.OortStaticConfigServlet;
+import org.cometd.oort.Seti;
+import org.cometd.oort.SetiServlet;
 import org.cometd.server.CometDServlet;
+import org.cometd.websocket.client.WebSocketTransport;
+import org.eclipse.jetty.client.HttpClient;
 import org.exoplatform.commons.utils.PropertyManager;
 import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.PortalContainer;
@@ -60,6 +68,10 @@ public class EXoContinuationCometdServlet extends CometDServlet {
      */
     private ExoContainer      container;
     
+    private OortConfigServlet oConfig;
+    
+    private SetiServlet setiServlet;
+    
     public static final String PREFIX = "eXo.cometd.";
     
     public static String[] configs = {"transports", "allowedTransports", "jsonContext", "validateMessageFields", "broadcastToPublisher",
@@ -77,6 +89,40 @@ public class EXoContinuationCometdServlet extends CometDServlet {
                 EXoContinuationCometdServlet.this.container = portalContainer;
                 try {                    
                     EXoContinuationCometdServlet.super.init(config);
+                    
+                    oConfig = new OortConfig();
+                    oConfig.init(new ServletConfig() {
+                        
+                        @Override
+                        public String getServletName() {
+                            return config.getServletName();
+                        }
+                        
+                        @Override
+                        public ServletContext getServletContext() {
+                            return config.getServletContext();
+                        }
+                        
+                        @Override
+                        public Enumeration getInitParameterNames() {
+                            return config.getInitParameterNames();
+                        }
+                        
+                        @Override
+                        public String getInitParameter(String name) {
+                            return EXoContinuationCometdServlet.this.getInitParameter(name);
+                        }
+                    });
+                    
+                    setiServlet = new SetiServlet();
+                    setiServlet.init(config);
+                    
+                    ServletContext cometdContext = config.getServletContext();
+                    Seti seti = (Seti)cometdContext.getAttribute(Seti.SETI_ATTRIBUTE);
+                    Oort oort = (Oort)cometdContext.getAttribute(Oort.OORT_ATTRIBUTE);
+                    EXoContinuationBayeux bayeux = (EXoContinuationBayeux) container.getComponentInstanceOfType(BayeuxServer.class);
+                    bayeux.setSeti(seti);
+                    bayeux.setOort(oort);
                 } catch (ServletException e) {
                     LOG.error("Cannot initialize Bayeux", e);
                 }
@@ -122,5 +168,32 @@ public class EXoContinuationCometdServlet extends CometDServlet {
         names.addAll(Arrays.asList(configs));
         
         return Collections.enumeration(names);
+    }
+
+    @Override
+    public void destroy() {
+        setiServlet.destroy();
+        oConfig.destroy();
+        super.destroy();        
+    }    
+    
+    /**
+     * This class help to workaround issue with eap 6.2 that  
+     * has not support Websocket transport yet
+     */
+    public static class OortConfig extends OortStaticConfigServlet {
+        private static final long serialVersionUID = 1054209695244836363L;
+
+        @Override
+        protected Oort newOort(BayeuxServer bayeux, String url) {
+            Oort oort = super.newOort(bayeux, url);
+            ServletConfig config = getServletConfig();
+            String transport = config.getInitParameter("transports");
+            if (transport == null || !transport.contains(WebSocketTransport.class.getName())) {
+                oort.getClientTransportFactories().add(new LongPollingTransport.Factory(new HttpClient()));                
+            }
+            return oort;
+        }
+        
     }
 }
