@@ -73,6 +73,8 @@ public class EXoContinuationCometdServlet extends CometDServlet {
     private SetiServlet setiServlet;
     
     public static final String PREFIX = "eXo.cometd.";
+
+    protected static final String CLOUD_ID_SEPARATOR = "cloudIDSeparator";
     
     public static String[] configs = {"transports", "allowedTransports", "jsonContext", "validateMessageFields", "broadcastToPublisher",
                                       "timeout", "interval", "maxInterval", "maxLazyTimeout", "metaConnectDeliverOnly", "maxQueue", "maxSessionsPerBrowser",
@@ -88,7 +90,7 @@ public class EXoContinuationCometdServlet extends CometDServlet {
             public void execute(ServletContext context, PortalContainer portalContainer) {
                 EXoContinuationCometdServlet.this.container = portalContainer;
                 try {                    
-                    EXoContinuationCometdServlet.super.init(config);
+                    EXoContinuationCometdServlet.super.init(config);                    
                     
                     oConfig = new OortConfig();
                     oConfig.init(new ServletConfig() {
@@ -120,9 +122,15 @@ public class EXoContinuationCometdServlet extends CometDServlet {
                     ServletContext cometdContext = config.getServletContext();
                     Seti seti = (Seti)cometdContext.getAttribute(Seti.SETI_ATTRIBUTE);
                     Oort oort = (Oort)cometdContext.getAttribute(Oort.OORT_ATTRIBUTE);
-                    EXoContinuationBayeux bayeux = (EXoContinuationBayeux) container.getComponentInstanceOfType(BayeuxServer.class);
+                    
+                    EXoContinuationBayeux bayeux = (EXoContinuationBayeux)getBayeux();
                     bayeux.setSeti(seti);
                     bayeux.setOort(oort);
+                    
+                    String separator = getInitParameter(CLOUD_ID_SEPARATOR);
+                    if (separator != null) {
+                        bayeux.setCloudIDSeparator(separator);                        
+                    }
                 } catch (ServletException e) {
                     LOG.error("Cannot initialize Bayeux", e);
                 }

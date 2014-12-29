@@ -16,6 +16,7 @@ package org.mortbay.cometd.continuation;
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, see<http://www.gnu.org/licenses/>.
  */
+import javax.jcr.RepositoryException;
 import javax.servlet.ServletContext;
 
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import org.cometd.oort.Seti;
 import org.cometd.server.BayeuxServerImpl;
 import org.cometd.server.ServerSessionImpl;
 import org.eclipse.jetty.util.ConcurrentHashSet;
+import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 
@@ -69,6 +71,8 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
      * Cometd webapp context name
      */
     private String                     cometdContextName = "cometd";
+    
+    private String cloudIDSeparator = "/";
 
     /**
      * Used to send message to all client or a specific client that listen a
@@ -79,6 +83,8 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
     private Seti seti;
     
     private Oort oort;
+    
+    private RepositoryService repoService;
 
     /**
      * Logger.
@@ -88,9 +94,10 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
     /**
      * Default constructor.
      */
-    public EXoContinuationBayeux() {
+    public EXoContinuationBayeux(RepositoryService repoService) {
         super();
         this.setSecurityPolicy(new EXoSecurityPolicy(this));
+        this.repoService = repoService;
     }
 
     /**
@@ -183,6 +190,7 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
     }
 
     public boolean isSubscribed(String eXoID, String clientID) {
+        eXoID = toCloudId(eXoID);
         return (clientIDs.get(eXoID) != null && clientIDs.get(eXoID).contains(clientID));
     }
 
@@ -223,6 +231,7 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
      * @param id The id of the message (or null for a random id).
      */
     public void sendMessage(String eXoID, String channel, Object data, String id) {
+        eXoID = toCloudId(eXoID);
         seti.sendMessage(eXoID, channel, data);        
     }
     
@@ -233,13 +242,37 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
     public void setOort(Oort oort) {
         this.oort = oort;
     }
+    
+    public void setCloudIDSeparator(String cloudIDSeparator) {
+        if (cloudIDSeparator != null) {
+            this.cloudIDSeparator = cloudIDSeparator;
+        } else {
+            LOG.warn("Can't set null for cloudIDSeparator");
+        }
+    }
 
     private ServerSessionImpl getSystemClient() {
         if (systemClient == null) {
             systemClient = newServerSession();
         }
         return systemClient;
-    }    
+    }
+    
+    private String toCloudId(String eXoID) {
+        if (repoService != null) {
+            try {
+                String currRepo = repoService.getCurrentRepository().getConfiguration().getName();
+                StringBuilder builder = new StringBuilder(currRepo);
+                builder.append(cloudIDSeparator);
+                builder.append(eXoID);
+                return builder.toString();
+            } catch (RepositoryException e) {
+                LOG.error(e.getMessage(), e);
+            }
+        }
+        
+        return eXoID;        
+    }
 
     public static class EXoSecurityPolicy implements SecurityPolicy, ServerSession.RemoveListener {
 
@@ -284,6 +317,7 @@ public class EXoContinuationBayeux extends BayeuxServerImpl {
                 client.addListener(this);
                 
                 String eXoID = (String) message.get("exoId");
+                eXoID = bayeux.toCloudId(eXoID);
                 Set<String> cIds = clientIDs.get(eXoID);
                 if (cIds == null) {
                     cIds = new ConcurrentHashSet<String>();
